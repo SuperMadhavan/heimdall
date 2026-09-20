@@ -1,6 +1,7 @@
 ---
 name: author-runbook
 description: Draft a coded Sherlock-style Runbook bean + PR from a resolver's stored plain-language proposal. Use when a resolver has submitted a runbook proposal for a ticket (via the project's "Propose runbook" flow) and a local Heimdall session, running inside the target project's own repo checkout, needs to turn that proposal into a real, tested, reviewed Runbook implementation and open a PR — without merging, activating, or deploying it.
+argument-hint: <ticketId>
 ---
 
 # /hmd:author-runbook — draft a coded Runbook from a resolver's proposal
@@ -27,7 +28,7 @@ yet). Schema (all keys optional — see defaults/fallbacks below):
   "repoPath": ".",
   "apiBase": "http://localhost:8080",
   "proposalEndpoint": "/api/v1/sherlock/tickets/{ticketId}/runbook-proposal",
-  "actorHeader": "X-Zeus-User-Id",
+  "actorHeader": "<your-actor-header>",
   "spiPath": "path/to/module/src/main/java/.../runbook/Runbook.java",
   "exemplarPath": "path/to/module/src/main/java/.../runbook/impl/SomeExistingRunbook.java",
   "runbookImplDir": "path/to/module/src/main/java/.../runbook/impl/",
@@ -46,7 +47,8 @@ yet). Schema (all keys optional — see defaults/fallbacks below):
 - `proposalEndpoint` — path template for fetching a stored proposal; `{ticketId}` is substituted
   with `$1` (default `/api/v1/sherlock/tickets/{ticketId}/runbook-proposal`).
 - `actorHeader` — the header name this project uses to identify the calling human/service
-  (default `X-Zeus-User-Id`); value comes from the resolver's own session, never hardcode a user id.
+  (project-specific; configure it in `.sherlock/author-runbook.json`); value comes from the
+  resolver's own session, never hardcode a user id.
 - `spiPath` — path to the `Runbook` interface (or equivalent) that defines the contract every
   runbook bean implements.
 - `exemplarPath` — path to one existing, working runbook bean to copy the shape of.
@@ -262,6 +264,8 @@ human-gated step after review.
 ## Example project config
 
 This command reads everything project-specific from `.sherlock/author-runbook.json` — it never
-hardcodes a project's module names, ports, or build commands in its own body. See
-`docs/hmd-plugin/example-superback-author-runbook.json` in this staging area for a concrete
-example of what a superback-like Java/Maven monorepo would put in that file.
+hardcodes a project's module names, ports, or build commands in its own body. A Java/Maven
+monorepo's config typically points `spiPath`/`exemplarPath`/`runbookImplDir` at the relevant
+`.../runbook/` package, `capabilityPortDir` at the module's `application/port/out/` directory, and
+`buildCmd` at a `mvn test -pl <module>` invocation — see the schema in Step 0 for the full set of
+keys.
