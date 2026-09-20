@@ -89,13 +89,21 @@ curl -s "$API_BASE<proposalEndpoint with {ticketId} replaced by $1>" \
   ticketAiSummary }` — adapt field names to what the project's endpoint actually returns; read one
   real response before assuming the shape.
 - A 404 means either the ticket doesn't exist or has no stored proposal — stop and tell the
-  resolver to submit a proposal first (via that project's own "propose runbook" flow).
+  resolver to submit a proposal first (via that project's own "propose runbook" flow). Do not fall
+  back to the datastore for a 404 — there is nothing to read; correctly report it as not found.
 
-**If the API is unreachable** (app not running, network), fall back to reading the proposal
-straight from the project's own datastore — the exact connection details (host/port/credentials)
-are project-specific; look for how this repo's own scripts/docs connect to its DB (e.g. a
+**If the API is unreachable** (a connection-level failure — app not running, DNS, connection
+refused, timeout — i.e. no HTTP response at all), fall back to reading the proposal straight from
+the project's own datastore — the exact connection details (host/port/credentials) are
+project-specific; look for how this repo's own scripts/docs connect to its DB (e.g. a
 `.env.local`, a documented `psql`/equivalent one-liner) and reuse that pattern. Never invent
 credentials, and **never print or log a password or any secret value** while doing this.
+
+**Any other HTTP error status (401, 403, 500, etc.) — anything that is NOT a 404 — must STOP and
+surface the error to the resolver.** Do NOT fall back to the datastore for these: the app answered
+and refused or failed, which may reflect authz the direct datastore path would bypass. The
+datastore fallback is reserved strictly for the connection-level "unreachable" case above, never
+for an HTTP error response.
 
 ## Step 2 — Ground yourself in the REAL code before drafting anything
 
